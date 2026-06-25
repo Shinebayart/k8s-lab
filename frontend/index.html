@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Manager – Docker Lab</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    header .badge {
+      background: #2563eb;
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    /* ── Add User Form ─────────────────────────────────── */
+    .card {
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 1.8rem;
+    }
+
+    .card h2 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #94a3b8;
+      margin-bottom: 1rem;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    input[type="text"],
+    input[type="email"] {
+      flex: 1;
+      min-width: 160px;
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 6px;
+      color: #e2e8f0;
+      padding: 0.6rem 0.9rem;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input:focus { border-color: #2563eb; }
+
+    button.btn-add {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    button.btn-add:hover { background: #1d4ed8; }
+    button.btn-add:disabled { background: #334155; cursor: not-allowed; }
+
+    /* ── User List ─────────────────────────────────────── */
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .list-header h2 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #94a3b8;
+    }
+
+    #user-count {
+      font-size: 0.78rem;
+      color: #64748b;
+    }
+
+    #user-list {
+      list-style: none;
+    }
+
+    #user-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 0.85rem 1.1rem;
+      margin-bottom: 0.5rem;
+      transition: border-color 0.15s;
+    }
+    #user-list li:hover { border-color: #3b4264; }
+
+    .user-info { display: flex; flex-direction: column; gap: 0.15rem; }
+    .user-name { font-weight: 600; font-size: 0.95rem; color: #f1f5f9; }
+    .user-email { font-size: 0.8rem; color: #64748b; }
+    .user-date  { font-size: 0.72rem; color: #475569; margin-top: 0.1rem; }
+
+    button.btn-del {
+      background: transparent;
+      border: 1px solid #3b4264;
+      border-radius: 6px;
+      color: #f87171;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    button.btn-del:hover { background: #450a0a; border-color: #f87171; }
+
+    /* ── States ────────────────────────────────────────── */
+    .empty, .error-msg {
+      text-align: center;
+      padding: 2rem;
+      color: #475569;
+      font-size: 0.9rem;
+      background: #1e2130;
+      border: 1px dashed #2d3148;
+      border-radius: 8px;
+    }
+    .error-msg { color: #f87171; border-color: #7f1d1d; }
+
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: #166534;
+      color: #bbf7d0;
+      border-radius: 8px;
+      padding: 0.7rem 1.2rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.error { background: #7f1d1d; color: #fca5a5; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <span class="badge">Docker Lab</span>
+    <h1>User Manager</h1>
+  </header>
+
+  <!-- Add User -->
+  <div class="card">
+    <h2>Add User</h2>
+    <div class="form-row">
+      <input type="text"  id="inp-name"  placeholder="Full name" />
+      <input type="email" id="inp-email" placeholder="Email address" />
+      <button class="btn-add" id="btn-add" onclick="addUser()">Add User</button>
+    </div>
+  </div>
+
+  <!-- User List -->
+  <div class="list-header">
+    <h2>Users</h2>
+    <span id="user-count"></span>
+  </div>
+  <ul id="user-list"></ul>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = '/api';
+
+  async function loadUsers() {
+    const list = document.getElementById('user-list');
+    try {
+      const res = await fetch(`${API}/users`);
+      const users = await res.json();
+      document.getElementById('user-count').textContent = `${users.length} user${users.length !== 1 ? 's' : ''}`;
+      if (users.length === 0) {
+        list.innerHTML = '<div class="empty">No users yet. Add one above.</div>';
+        return;
+      }
+      list.innerHTML = users.map(u => `
+        <li id="user-${u.id}">
+          <div class="user-info">
+            <span class="user-name">${esc(u.name)}</span>
+            <span class="user-email">${esc(u.email)}</span>
+            <span class="user-date">${new Date(u.created_at).toLocaleString()}</span>
+          </div>
+          <button class="btn-del" onclick="removeUser(${u.id})">Remove</button>
+        </li>
+      `).join('');
+    } catch {
+      list.innerHTML = '<div class="error-msg">Cannot reach backend. Is it running?</div>';
+    }
+  }
+
+  async function addUser() {
+    const name  = document.getElementById('inp-name').value.trim();
+    const email = document.getElementById('inp-email').value.trim();
+    if (!name || !email) { showToast('Name and email are required.', true); return; }
+
+    const btn = document.getElementById('btn-add');
+    btn.disabled = true;
+    try {
+      const res = await fetch(`${API}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email })
+      });
+      if (res.status === 409) { showToast('That email is already registered.', true); return; }
+      if (!res.ok) { showToast('Failed to add user.', true); return; }
+      document.getElementById('inp-name').value  = '';
+      document.getElementById('inp-email').value = '';
+      showToast('User added.');
+      await loadUsers();
+    } catch {
+      showToast('Backend unreachable.', true);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function removeUser(id) {
+    try {
+      const res = await fetch(`${API}/users/${id}`, { method: 'DELETE' });
+      if (!res.ok) { showToast('Could not remove user.', true); return; }
+      document.getElementById(`user-${id}`)?.remove();
+      showToast('User removed.');
+      await loadUsers();
+    } catch {
+      showToast('Backend unreachable.', true);
+    }
+  }
+
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => { t.className = 'toast'; }, 2500);
+  }
+
+  function esc(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  loadUsers();
+</script>
+</body>
+</html>
