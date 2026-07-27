@@ -9,7 +9,7 @@ services:
 
   # ── 1. PostgreSQL Database ────────────────────────────────
   db:
-    image: pshinee8241/k8s-lab:db
+    image: shinee8241/k8s-lab:db
     container_name: lab_db
     environment:
       POSTGRES_USER: labuser
@@ -28,7 +28,7 @@ services:
     restart: unless-stopped
 
   # ── 2. Backend – FastAPI ──────────────────────────────────
-  backend:
+  backend-service:
     image: shinee8241/k8s-lab:backend
     container_name: lab_backend
     environment:
@@ -51,5 +51,5 @@ services:
     networks:
       - app_net
     depends_on:
-      - backend
+      - backend-service
     restart: unless-stopped
