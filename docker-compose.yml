@@ -9,7 +9,7 @@ services:
 
   # ── 1. PostgreSQL Database ────────────────────────────────
   db:
-    image: postgres:16-alpine
+    image: pshinee8241/k8s-lab:db
     container_name: lab_db
     environment:
       POSTGRES_USER: labuser
@@ -29,7 +29,7 @@ services:
 
   # ── 2. Backend – FastAPI ──────────────────────────────────
   backend:
-    build: ./backend
+    image: shinee8241/k8s-lab:backend
     container_name: lab_backend
     environment:
       DATABASE_URL: postgresql://labuser:labpass@db:5432/labdb
@@ -44,7 +44,7 @@ services:
 
   # ── 3. Frontend – Nginx + Static HTML ────────────────────
   frontend:
-    build: ./frontend
+    image: shinee8241/k8s-lab:frontend
     container_name: lab_frontend
     ports:
       - "3000:80"
